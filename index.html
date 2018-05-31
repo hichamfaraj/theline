@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>on the line</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+	body {
+		margin: 0;
+	}
+
+	#page, #tracker {
+	  width: 50vw;
+	  height: 100vh;
+	/*  background: yellow;*/
+	  display: inline-block;
+	}
+
+	#page {
+		display:block;
+		overflow:hidden;
+		position:relative;
+		background-color:black;
+		user-select:none;
+	}
+
+	#pic {
+		pointer-events: none;
+		position: relative;
+		left: -4700px;
+		top: -2900px;
+				user-select:none;
+	}
+
+	#tracker {
+	/*  background: lime;*/
+	  position:absolute;
+	  right:0;
+	  top:0;
+	}
+</style>
+</head>
+
+<body>
+
+	<div id="page">
+			<img src="web_image.jpg" id="pic" width="13000vw">
+	</div>
+	<canvas id="tracker"></canvas>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
+	const page = document.querySelector('#page')
+	const can = document.querySelector('#tracker')
+	can.width = window.innerWidth / 2;
+	can.height = window.innerHeight;
+	const ctx = can.getContext('2d')
+	ctx.lineWidth = 4
+	ctx.lineStyle = 'red'
+	let isDragging = false
+	let pmouseX = 0
+	let pmouseY = 0
+
+	page.onmousedown = function(e) {
+	  isDragging = true
+	  ctx.beginPath()
+	  ctx.moveTo(e.x, e.y)
+	}
+
+	window.onmousemove = function (e) {
+	  if (isDragging) {
+	    ctx.fillStyle = 'red'
+	    ctx.fillRect(e.x, e.y, 1, 1)
+
+	    ctx.lineTo(e.x, e.y)
+	    ctx.stroke()
+
+	    pmouseX = e.x
+	    pmouseY = e.y
+	  }
+	}
+
+	window.onmouseup = function (e) {
+	  isDragging = false
+	   ctx.closePath()
+	}
+</script>
+
+<script>
+// MAKE IMAGE DRAGGABLE
+
+var _DRAGGGING_STARTED = 0;
+var _LAST_MOUSEMOVE_POSITION = { x: null, y: null };
+var _DIV_OFFSET = $('#page').offset();
+var _CONTAINER_WIDTH = $("#page").outerWidth();
+var _CONTAINER_HEIGHT = $("#page").outerHeight();
+var _IMAGE_WIDTH;
+var _IMAGE_HEIGHT;
+var _IMAGE_LOADED = 0;
+
+// Check whether image is cached or wait for the image to load
+// This is necessary before calculating width and height of the image
+if($('#pic').get(0).complete) {
+	ImageLoaded();
+}
+else {
+	$('#pic').on('load', function() {
+		ImageLoaded();
+	});
+}
+
+// Image is loaded
+function ImageLoaded() {
+	_IMAGE_WIDTH = $("#pic").width();
+	_IMAGE_HEIGHT = $("#pic").height();
+	_IMAGE_LOADED = 1;
+}
+
+$('#page').on('mousedown', function(event) {
+	/* Image should be loaded before it can be dragged */
+	if(_IMAGE_LOADED == 1) {
+		_DRAGGGING_STARTED = 1;
+
+		/* Save mouse position */
+		_LAST_MOUSE_POSITION = { x: event.pageX - _DIV_OFFSET.left, y: event.pageY - _DIV_OFFSET.top };
+	}
+});
+
+$('#page').on('mouseup', function() {
+	_DRAGGGING_STARTED = 0;
+});
+
+$('#page').on('mousemove', function(event) {
+	if(_DRAGGGING_STARTED == 1) {
+		var current_mouse_position = { x: event.pageX - _DIV_OFFSET.left, y: event.pageY - _DIV_OFFSET.top };
+		var change_x = current_mouse_position.x - _LAST_MOUSE_POSITION.x;
+		var change_y = current_mouse_position.y - _LAST_MOUSE_POSITION.y;
+
+		/* Save mouse position */
+		_LAST_MOUSE_POSITION = current_mouse_position;
+
+		var img_top = parseInt($("#pic").css('top'), 10);
+		var img_left = parseInt($("#pic").css('left'), 10);
+
+		var img_top_new = img_top + change_y;
+		var img_left_new = img_left + change_x;
+
+		/* Validate top and left do not fall outside the image, otherwise white space will be seen */
+		if(img_top_new > 0)
+			img_top_new = 0;
+		if(img_top_new < (_CONTAINER_HEIGHT - _IMAGE_HEIGHT))
+			img_top_new = _CONTAINER_HEIGHT - _IMAGE_HEIGHT;
+
+		if(img_left_new > 0)
+			img_left_new = 0;
+		if(img_left_new < (_CONTAINER_WIDTH - _IMAGE_WIDTH))
+			img_left_new = _CONTAINER_WIDTH - _IMAGE_WIDTH;
+
+		$("#pic").css({ top: img_top_new + 'px', left: img_left_new + 'px' });
+	}
+});
+</script>
+</body>
+
+</html>
